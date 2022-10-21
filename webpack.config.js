@@ -9,8 +9,5 @@ module.exports = {
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: '[name].worker.js'
-    },
-    module: {
-        rules: [{test: /\.node$/, use: "node-loader"}]
     }
 }

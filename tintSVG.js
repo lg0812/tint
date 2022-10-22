@@ -1,40 +1,43 @@
-const {forEach} = require("lodash")
+const {forEach, join} = require("lodash")
 const sharp = require('sharp')
 const Jimp = require("jimp");
 const {sideEffect} = require("./replaceMultipleColors")
 
-const tintSVG = async ({svgStr, colors, options = {}}) => {
-    try {
-        const start = Date.now();
-        const found = svgStr.match(/\$\d+/g)
-        console.log('from tintSVG, match result:', found, colors.length)
+const tintSVG = async ({
+                         svgStr = '',
+                         colors,
+                         options = {}
+                       }) => {
+  try {
+    const start = Date.now();
 
-        if ((found || []).length > colors.length && colors.length !== 1) {
-            console.error("from tintSVG, 占位符个数 > 颜色值个数，请检查数据！", svgStr, colors)
-            return svgStr
+    forEach(colors, (color, index) => {
+      if (color) {
+        if (/^#[a-fA-F\d]{8}$/.test(color)) {
+          color = '#' + color.slice(3)
         }
 
-        forEach(colors, (color, index) => {
-            if (color) {
-                if (/^#[a-fA-F\d+]{8}$/.test(color)) {
-                    color = '#' + color.slice(3)
-                }
+        svgStr = svgStr.replaceAll(`$${index}`, color)
+      } else {
+        console.log('from tintSVG, skip invalid color!')
+      }
+    })
 
-                svgStr = svgStr.replace(`$${index}`, color)
-            } else {
-                console.log('skip invalid color!')
-            }
-        })
-
-        const buffer = await sharp(Buffer.from(svgStr)).png().toBuffer()
-
-        const read = Jimp.read || Jimp.default.read
-        const image = await sideEffect(await read(buffer), options)
-        return await image.getBase64Async('image/png')
-    } catch (e) {
-        console.log('from tintSVG, svg convert to png exception: ', e)
+    const found = svgStr.match(/\$\d+/g)
+    if ((found || []).length > 0) {
+      throw new Error(`from tintSVG, 占位符未完全替换，请检查数据！ svgStr: ${svgStr}, colors: ${join(colors)}`)
     }
-    return ''
+
+    const buffer = await sharp(Buffer.from(svgStr)).png().toBuffer()
+
+    const read = Jimp.read || Jimp.default.read
+    const image = await sideEffect(await read(buffer), options)
+    console.log('from tintSVG, 执行时间：', Date.now() - start)
+    return await image.getBase64Async('image/png')
+  } catch (e) {
+    console.log('from tintSVG, svg convert to png exception: ', e)
+  }
+  return ''
 }
 
 module.exports = {tintSVG}

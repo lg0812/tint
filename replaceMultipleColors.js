@@ -7,11 +7,11 @@ const ReplaceColorError = require('replace-color/src/utils/replace-color-error')
 const validateColors = require('replace-color/src/utils/validate-colors')
 
 const replaceColor = ({
-  image,
-  colors,
-  formula = 'E00',
-  deltaE = 2.3
-} = {}, callback) => {
+                        image,
+                        colors,
+                        formula = 'E00',
+                        deltaE = 2.3
+                      } = {}, callback) => {
   if (callback) {
     if (typeof callback !== 'function') {
       throw new ReplaceColorError('PARAMETER_INVALID', 'callback')
@@ -29,7 +29,7 @@ const replaceColor = ({
     }
 
     colors.forEach((color) => {
-      var colorsValidationError = validateColors(color)
+      const colorsValidationError = validateColors(color)
       if (colorsValidationError) {
         return callback(new ReplaceColorError(colorsValidationError.code, colorsValidationError.field))
       }
@@ -45,29 +45,29 @@ const replaceColor = ({
     }
 
     const read = Jimp.read || Jimp.default.read
-    
+
     read(image)
       .then((jimpObject) => {
 
         colors.forEach((color) => {
-        const targetLABColor = convertColor(color.type, 'lab', color.targetColor)
-        const replaceRGBColor = convertColor(color.type, 'rgb', color.replaceColor)
+          const targetLABColor = convertColor(color.type, 'lab', color.targetColor)
+          const replaceRGBColor = convertColor(color.type, 'rgb', color.replaceColor)
 
-        jimpObject.scan(0, 0, jimpObject.bitmap.width, jimpObject.bitmap.height, (x, y, idx) => {
-          const currentLABColor = convertColor('rgb', 'lab', [
-            jimpObject.bitmap.data[idx],
-            jimpObject.bitmap.data[idx + 1],
-            jimpObject.bitmap.data[idx + 2]
-          ])
+          jimpObject.scan(0, 0, jimpObject.bitmap.width, jimpObject.bitmap.height, (x, y, idx) => {
+            const currentLABColor = convertColor('rgb', 'lab', [
+              jimpObject.bitmap.data[idx],
+              jimpObject.bitmap.data[idx + 1],
+              jimpObject.bitmap.data[idx + 2]
+            ])
 
-          if (getDelta(currentLABColor, targetLABColor, formula) <= deltaE) {
-            jimpObject.bitmap.data[idx] = replaceRGBColor[0]
-            jimpObject.bitmap.data[idx + 1] = replaceRGBColor[1]
-            jimpObject.bitmap.data[idx + 2] = replaceRGBColor[2]
-            if (replaceRGBColor[3] !== null) jimpObject.bitmap.data[idx + 3] = replaceRGBColor[3]
-          }
+            if (getDelta(currentLABColor, targetLABColor, formula) <= deltaE) {
+              jimpObject.bitmap.data[idx] = replaceRGBColor[0]
+              jimpObject.bitmap.data[idx + 1] = replaceRGBColor[1]
+              jimpObject.bitmap.data[idx + 2] = replaceRGBColor[2]
+              if (replaceRGBColor[3] !== null) jimpObject.bitmap.data[idx + 3] = replaceRGBColor[3]
+            }
+          })
         })
-      })
 
         callback(null, jimpObject)
       })
@@ -76,20 +76,20 @@ const replaceColor = ({
 }
 
 const sideEffect = async (image, options = {}) => {
-  console.log('form sideEffect, options 配置：', opitons)
-  
-  const {name , opacity, mask, maskOpacity} = options
-  if(opacity !== undefined) {
-    image =image.opacity(opacity)
+  console.log('form sideEffect, options 配置：', options)
+
+  const {name, opacity, mask, maskOpacity} = options
+  if (opacity !== undefined) {
+    image = image.opacity(opacity)
   }
-  
-  if(mask !== undefined && mask !== '') {
+
+  if (mask !== undefined && mask !== '') {
     const {width, height} = image.bitmap
     const color = Jimp.cssColorToHex(mask)
     const maskLayer = new Jimp(width, height, color)
     image = image.composite(maskLayer.opacity(maskOpacity || 1), 0, 0)
   }
-  
+
   return image;
 }
 
